@@ -1,0 +1,48 @@
+name: 'Validate Skill'
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: 'bash'
+
+jobs:
+  validate:
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+    steps:
+      - name: 'Checkout repository'
+        uses: 'actions/checkout@v4'
+
+      - name: 'Set up Python'
+        uses: 'actions/setup-python@v5'
+        with:
+          python-version: '3.12'
+
+      - name: 'Install skills-ref'
+        run: |
+          python3 -m pip install skills-ref
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: 'Validate skill'
+        run: |
+          agentskills validate .
+
+      - name: 'Check required files'
+        run: |
+          for f in SKILL.md OWNERS EVAL.yaml; do
+            test -f "$f" || { echo "missing required file: $f"; exit 1; }
+          done
+
+      - name: 'Verify scaffold script runs'
+        run: |
+          python3 scripts/init_novel_project.py /tmp/skill-smoke-test --no-git
+          test -f /tmp/skill-smoke-test/00-项目状态.md
+          test -f /tmp/skill-smoke-test/写作规则.md
+          echo "scaffold ok"

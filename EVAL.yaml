@@ -1,0 +1,88 @@
+# 评测集：验证「有 skill」相对「无 skill」是否带来准确率与效率提升
+# 用法：对比开启/关闭本 skill 两组运行结果，按 rubric 逐条判定
+
+name: ai-novel-workflow
+version: 1.0.0
+owner: 杨苛 / yyl1208
+
+methodology:
+  - 每个用例至少跑 2 次（不同会话或模型），对比开启与关闭本 skill 两组
+  - 两个维度打分：accuracy（任务完成率、关键动作是否执行）与 efficiency（token 消耗、工具调用次数）
+  - 任一严重项命中则用例判不通过，不看总分
+  - 评测退化时先改指令，不降低标准
+
+pass_criteria:
+  - 4 个用例全部通过，严重项零命中
+  - efficiency 优于无 skill 基线：搭建场景应显著优于；写作场景工具调用次数不高于基线 1.5 倍
+
+evaluations:
+  - id: setup-new-project
+    name: 搭建新项目
+    prompt: "帮我搭一个小说写作工作流，放在 ~/Documents/我的新书"
+    expectations:
+      - 使用 scripts/init_novel_project.py 或等价方式，创建 6 个目录 + 19 个模板文件
+      - 未创建任何正文内容（正文/ 与 待确认/ 下无章节稿）
+      - 目标目录非空时跳过已存在文件并列出，不覆盖
+      - 初始化 git 仓库并完成首次提交（用户未禁用时）
+      - 交付四项报告：创建清单、冲突情况、待作者填写内容、每章执行顺序
+    rubric:
+      - level: 严重
+        rule: 覆盖已有文件 → 不通过
+      - level: 严重
+        rule: 擅自写入正文 → 不通过
+      - level: 普通
+        rule: 缺任一报告项 → 不通过
+      - level: 轻微
+        rule: 未初始化 git → 扣分
+    efficiency_baseline: "无 skill 时 AI 需手写 19 个模板，token 消耗大且字段易遗漏；有 skill 时应为脚本一次执行 + 报告"
+
+  - id: write-chapter
+    name: 按工作流写作
+    precondition: "01/02/人物卡/滚动细纲 已填写完整"
+    prompt: "按这套工作流写第 1 章"
+    expectations:
+      - 先读取 00-项目状态 的必读清单与写作规则
+      - 填写章节合同十问，无「为了推进剧情」式空答
+      - 初稿写入 待确认/，不进 正文/
+      - 产出冷读报告，记录 S1/S2/S3 且 S1 清零
+      - DECIDE 之前不回写追踪四件套
+      - 结尾交给作者裁决，不自作主张转正
+    rubric:
+      - level: 严重
+        rule: 初稿直接进 正文/ → 不通过
+      - level: 严重
+        rule: 跳过章节合同 → 不通过
+      - level: 普通
+        rule: 未做冷读即交付 → 不通过
+      - level: 轻微
+        rule: 裁决前提前回写数据库 → 扣分
+
+  - id: missing-material-guard
+    name: 缺资料护栏
+    precondition: "01-开书定位、02-核心设定、主角卡、滚动细纲 全为空模板"
+    prompt: "按这套工作流写第 1 章"
+    expectations:
+      - 拒绝直接写正文
+      - 明确指出缺失资料清单
+      - 向作者提问或提供补齐选项，不自行编造主角、世界观、主线
+    rubric:
+      - level: 严重
+        rule: 编造设定并写出正文 → 不通过
+      - level: 普通
+        rule: 未说明缺什么 → 不通过
+    note: 最容易失守的一条，每次改指令后优先复测
+
+  - id: fact-uniqueness
+    name: 事实唯一与归档
+    precondition: "待确认/ 下有第 1 章稿件且作者裁决通过"
+    prompt: "第 1 章已经通过了，把它正式归档"
+    expectations:
+      - 稿件移入 正文/ 并按规定重命名（第NNN章-标题.md）
+      - 待确认/ 下对应文件被删除，不保留双份
+      - git 提交一次
+      - 回写追踪四件套与 00-项目状态
+    rubric:
+      - level: 严重
+        rule: 正文与待确认并存 → 不通过
+      - level: 轻微
+        rule: 未提交 git → 扣分

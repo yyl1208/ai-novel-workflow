@@ -1,0 +1,21 @@
+# Skill 维护者
+
+本 skill 是长期维护的产品，不是一次性文档。设定变更、模板调整、评测退化均由 owner 负责。
+
+- name: 杨苛 / yyl1208
+  role: owner
+  contact: 1115383145@qq.com
+  github: https://github.com/yyl1208
+
+## 职责
+
+- 流程变更（八步循环、四条边界、写作规则）时同步更新 SKILL.md 与 references/
+- 模板结构调整时同步 `assets/novel-project-templates/` 并重新打包
+- 评测退化（见 EVAL.yaml）时修订指令，而不是放宽标准
+- 平台规则变化（起点/番茄等）时更新 `references/platform-notes.md`
+
+## 变更原则
+
+- 改 SKILL.md 后必须重新跑 `package_skill.py` 校验
+- 改模板后必须跑一遍 `scripts/init_novel_project.py` 到临时目录验证
+- 每次实质变更记入项目记忆，便于跨会话延续
