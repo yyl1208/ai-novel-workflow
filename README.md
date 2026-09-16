@@ -8,35 +8,135 @@ AI 长篇小说写作工作流。一套可复用的 skill + 项目模板，用�
 
 ## 一、安装
 
-三种方式任选其一：
+### 1.0 先看清目录结构（两个平台通用）
 
-**方式 1：git clone（推荐，方便更新）**
+不管装到哪个平台，**外层目录名必须叫 `ai-novel-workflow`，且 `SKILL.md` 必须在它的第一层**：
+
+```
+ai-novel-workflow/          ← 目录名 = skill 名，不能改
+├── SKILL.md                ← 必需，第一层，不能是 ai-novel-workflow/xxx/SKILL.md
+├── scripts/
+├── references/
+└── assets/
+```
+
+平台只扫描 skills 目录的**下一层**。多套一层文件夹、或目录名写成 `ai-novel-workflow-main`（GitHub 下载的 zip 默认名字），都不会被识别——这是装不上最常见的原因。
+
+### 1.1 平台 A：WorkBuddy
+
+| 级别 | 路径 |
+|---|---|
+| 用户级（所有项目可用，推荐） | `~/.workbuddy/skills/ai-novel-workflow/` |
+| 项目级（只当前项目用） | `<项目根>/.workbuddy/skills/ai-novel-workflow/` |
 
 ```bash
+# 用户级（推荐）
 git clone git@github.com:yyl1208/ai-novel-workflow.git ~/.workbuddy/skills/ai-novel-workflow
 ```
 
-**方式 2：下载 zip 解压**
+已经 clone 过、或用 zip 装的，注意**去掉 `-main` 后缀**：
 
 ```bash
+# GitHub 下载的 zip 解压后通常是 ai-novel-workflow-main
 unzip ai-novel-workflow.zip -d ~/.workbuddy/skills/
+mv ~/.workbuddy/skills/ai-novel-workflow-main ~/.workbuddy/skills/ai-novel-workflow
 ```
 
-**方式 3：项目级 skill**（只给当前项目用）
+项目级：
 
 ```bash
-mkdir -p .workbuddy/skills && cp -R ai-novel-workflow .workbuddy/skills/
+mkdir -p .workbuddy/skills
+cp -R ~/.workbuddy/skills/ai-novel-workflow .workbuddy/skills/
 ```
 
-安装后在对话里说「帮我搭一个小说写作工作流」即可触发。
+验证：
+
+```bash
+ls ~/.workbuddy/skills/ai-novel-workflow/SKILL.md
+```
+
+**怎么用**：直接说人话就行，不用记命令。WorkBuddy 会按 `SKILL.md` 的 description 自动匹配触发：
+
+> 「帮我搭一个小说写作工作流」
+> 「按这套工作流写第 5 章」
+
+已安装的 skill 出现在对话的技能列表里，也可以显式点名调用：`/ai-novel-workflow`。新装的 skill 如果没出现在列表里，重开一次对话即可。
+
+### 1.2 平台 B：Codex（CLI / 桌面版）
+
+Codex 自 2025-12 起支持 Agent Skills 规范，目录结构与 WorkBuddy 完全一致，**同一份文件两个平台通用，不需要分别改造**。
+
+| 级别 | 路径 | 优先级 |
+|---|---|---|
+| 仓库级（当前目录） | `$CWD/.codex/skills/ai-novel-workflow/` | 最高 |
+| 仓库级（仓库根） | `$REPO_ROOT/.codex/skills/ai-novel-workflow/` | 中 |
+| 用户级（推荐） | `~/.codex/skills/ai-novel-workflow/` | 低 |
+| 管理员级 | `/etc/codex/skills/ai-novel-workflow/` | 最低 |
+
+同名冲突时优先级高的覆盖低的。日常写书放**用户级**最省事；要随仓库提交给团队共享才用项目级。
+
+```bash
+# 用户级（推荐，所有项目可用）
+git clone git@github.com:yyl1208/ai-novel-workflow.git ~/.codex/skills/ai-novel-workflow
+```
+
+项目级（随仓库提交，团队共享）——两种放法 Codex 都能扫到，二选一即可：
+
+```bash
+mkdir -p .codex/skills && cp -R ~/.codex/skills/ai-novel-workflow .codex/skills/
+# 或
+mkdir -p .agents/skills && cp -R ~/.codex/skills/ai-novel-workflow .agents/skills/
+```
+
+验证：
+
+```bash
+ls ~/.codex/skills/ai-novel-workflow/SKILL.md
+codex --list-skills          # 看 Codex 是否真的解析成功
+```
+
+**怎么用**：Codex 每次启动会扫描 skills 目录并自动加载，装完直接对话即可：
+
+```bash
+codex "帮我搭一个小说写作工作流"
+codex "按这套工作流写第 5 章"
+```
+
+新装的 skill 一般自动检测；若没生效，**重启 Codex 强制重新扫描**一次。也可以用环境变量改目录：`export CODEX_SKILLS_PATH=/path/to/skills`（目录需先存在）。
+
+### 1.3 两个平台都装（推荐做法）
+
+放一份、另一份做软链，更新时只改一处：
+
+```bash
+# 先装 WorkBuddy
+git clone git@github.com:yyl1208/ai-novel-workflow.git ~/.workbuddy/skills/ai-novel-workflow
+# Codex 指向同一份
+mkdir -p ~/.codex/skills
+ln -s ~/.workbuddy/skills/ai-novel-workflow ~/.codex/skills/ai-novel-workflow
+```
+
+更新：
+
+```bash
+cd ~/.workbuddy/skills/ai-novel-workflow && git pull
+```
+
+> Windows 路径对应：`%USERPROFILE%\.workbuddy\skills\` 与 `%USERPROFILE%\.codex\skills\`。
 
 ---
 
 ## 二、30 秒搭一个新书项目
 
 ```bash
+# WorkBuddy
 python3 ~/.workbuddy/skills/ai-novel-workflow/scripts/init_novel_project.py "~/Documents/我的新书"
+
+# Codex（换成你的安装路径即可）
+python3 ~/.codex/skills/ai-novel-workflow/scripts/init_novel_project.py "~/Documents/我的新书"
 ```
+
+也可以让 AI 自己跑——直接说「帮我搭一个小说写作工作流」，它会找到这个脚本并执行。
 
 一条命令完成：
 
@@ -147,6 +247,21 @@ python3 ~/.workbuddy/skills/ai-novel-workflow/scripts/init_novel_project.py "~/D
 | 「做一次滚动复盘」 | 三问复盘 |
 
 也可以显式调用：`/ai-novel-workflow`（部分客户端支持）。
+
+### 各平台调用差异
+
+| | WorkBuddy | Codex |
+|---|---|---|
+| 加载时机 | 对话中按语义自动匹配 | 每次启动扫描目录并加载 |
+| 触发方式 | 直接说「按这套工作流写第 N 章」 | `codex "按这套工作流写第 N 章"` |
+| 显式调用 | `/ai-novel-workflow` | 不支持斜杠命令，写进 `AGENTS.md` 或直接在提示词点名 |
+| 装完不生效 | 重开一次对话 | 重启 Codex 强制扫描；`codex --list-skills` 排查 |
+
+Codex 用户建议在仓库根 `AGENTS.md` 里加一行，让每次都能稳定命中：
+
+```markdown
+写小说章节时使用 skill `ai-novel-workflow`，按八步循环执行。
+```
 
 ### 三种工作模式
 
