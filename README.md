@@ -184,22 +184,6 @@ SKILL.md                          核心流程（触发时必读）
 
 ---
 
-## 七、CI
-
-`.github/workflows/validate-skill.yml` 在 push / PR 时自动跑三件事：
-
-1. `agentskills validate`（frontmatter、目录结构、命名规范）
-2. 必需文件检查（SKILL.md / OWNERS / EVAL.yaml）
-3. 脚手架冒烟测试（确保脚本没坏）
-
----
-
-## 八、维护
-
-- Owner：杨苛 / yyl1208（见 `OWNERS`）
-- 改 SKILL.md 或模板后：重跑校验 + 跑一次脚手架 + 重跑 EVAL 用例 1 与 3
-- 平台规则变化（起点 / 番茄等）时更新 `references/platform-notes.md`
-
-## 九、License
+## 七、License
 
 MIT
